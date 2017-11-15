@@ -31,7 +31,7 @@ public class Line {
 	static double minValue;
 	static final float defaultSpeed = 70;
 	static int currentID;
-	
+	static Node current;
 	static boolean look;
 	static int turn; 
 	
@@ -51,10 +51,12 @@ public class Line {
 		LCD.clear();
 		LCD.drawString("Start: ", 0, 0);
 		start = connection.read(buffer, MAX_READ);
+		nodes.add(new Node(start));
 		Delay.msDelay(1000);
 		LCD.clear();
 		LCD.drawString("End: ", 0, 0);
 		end = connection.read(buffer, MAX_READ);
+		nodes.add(new Node(end));
 		Delay.msDelay(1000);
 		LCD.clear();
 		LCD.drawInt(start, 0, 1);
@@ -157,6 +159,7 @@ class LookForLine implements Behavior{
 	public void action() {
 		if(Line.ls.readValue() > 70) { // may need experimenting to get correct
 			Line.turn = 2;
+			Line.current.incrementTimesVisited();
 		}else {
 			Line.look = false;
 			Line.turn = 0;
@@ -186,17 +189,22 @@ class LookForJunction implements Behavior{
 		Line.pilot.stop();
 		correct();
 		
-		Node current = null;
 		if(!Line.checkNodes(Line.currentID)) {
 			Line.nodes.add(new Node(Line.currentID));
-			current = Line.nodes.get(Line.nodes.size()-1);
+			Line.current = Line.nodes.get(Line.nodes.size()-1);
 		}else {
 			for(Node node : Line.nodes) {
 				if(node.getID() == Line.currentID) {
-					current = node;
+					Line.current = node;
+					if(Line.current.getID() == Line.end) {
+						System.exit(0);
+					}else if(Line.current.getID() == Line.start && Line.current.getTimesVisited() == 4) {
+						System.exit(0);
+					}
 				}
 			}
 		}
+		Line.current.incrementTimesVisited();
 		Line.turn = 1;
 //		if(current.getTimesVisited() == 4) {
 //			Line.pilot.rotate(-90);
