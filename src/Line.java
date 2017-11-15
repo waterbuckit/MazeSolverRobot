@@ -32,6 +32,9 @@ public class Line {
 	static final float defaultSpeed = 70;
 	static int currentID;
 	
+	static boolean look;
+	static int turn; 
+	
 	public static void main(String args[]) {
 		pilot = new DifferentialPilot(56, 115, Motor.A, Motor.B);
 		ls = new LightSensor(SensorPort.S1);
@@ -104,8 +107,71 @@ public class Line {
 		return false;
 	}
 }
+class TurnLeft implements Behavior{
 
-class Junction implements Behavior{
+	@Override
+	public boolean takeControl() {
+		return Line.turn == 1;
+	}
+
+	@Override
+	public void action() {
+		Line.look = true;
+		Line.pilot.rotate(-90);
+	}
+
+	@Override
+	public void suppress() {
+		
+	}
+	
+}
+class TurnRight implements Behavior{
+
+	@Override
+	public boolean takeControl() {
+		return Line.turn == 2;
+	}
+
+	@Override
+	public void action() {
+		Line.look = true;
+		Line.pilot.rotate(90);
+	}
+
+	@Override
+	public void suppress() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+}
+class LookForLine implements Behavior{
+
+	@Override
+	public boolean takeControl() {
+		return Line.look;
+	}
+
+	@Override
+	public void action() {
+		if(Line.ls.readValue() > 70) { // may need experimenting to get correct
+			Line.turn = 2;
+		}else {
+			Line.look = false;
+			Line.turn = 0;
+			Line.currentID = 0;
+		}
+	}
+
+	@Override
+	public void suppress() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+}
+class LookForJunction implements Behavior{
 
 	@Override
 	public boolean takeControl() {
@@ -131,12 +197,19 @@ class Junction implements Behavior{
 				}
 			}
 		}
-		if(current.getTimesVisited() == 4) {
-			Line.pilot.rotate(-90);
-			return;
-		}else {
-			
-		}
+		Line.turn = 1;
+//		if(current.getTimesVisited() == 4) {
+//			Line.pilot.rotate(-90);
+//			Line.nodes.remove(current);
+//			Line.currentID = 0;
+//			return;
+//		}else {
+//			Line.pilot.rotate(-90);
+//			if(Line.ls.readValue() > 70) {
+//				Line.pilot.rotate(90);
+//				return;
+//			}
+//		}
 		
 	}
 
