@@ -31,16 +31,12 @@ public class Line {
 	static double maxValue;
 	static double minValue;
 	static final float defaultSpeed = 70;
-	static int currentID;
+	static String currentID;
 	static Node current;
 	static boolean look;
 	static int turn;
-<<<<<<< HEAD
 	private static double rotateSpeed = 30; 
-	
-=======
 
->>>>>>> e4e167cc590cb5d382398f1436cb534aecd3f46a
 	public static void main(String args[]) {
 		pilot = new DifferentialPilot(56, 115, Motor.A, Motor.B);
 		ls = new LightSensor(SensorPort.S1,true);
@@ -51,15 +47,10 @@ public class Line {
 		setStartandEnd();
 		calibrate();
 		Button.ENTER.waitForPressAndRelease(); // when we would like to start
-<<<<<<< HEAD
-		Behavior[] behaviorList = {new Follow(),new LookForJunction() ,
+		Behavior[] behaviorList = {new Follow(),new LookForJunction(),
 				new LookForLine(), new TurnRight(), new TurnLeft(),
-=======
-		Behavior[] behaviorList = {new Follow(),
-				new LookForLine(), new TurnRight(), new TurnLeft(),new LookForJunction(),
->>>>>>> e4e167cc590cb5d382398f1436cb534aecd3f46a
 				new BluetoothHandler(), new Stop()};
-		Arbitrator arb = new Arbitrator(behaviorList);
+				Arbitrator arb = new Arbitrator(behaviorList);
 		arb.start();
 	}
 	
@@ -79,8 +70,8 @@ public class Line {
 //		nodes.add(new Node(end));
 		Delay.msDelay(1000);
 		LCD.clear();
-		LCD.drawInt(start, 0, 1);
-		LCD.drawInt(end, 0, 2);
+		LCD.drawString(start, 0, 1);
+		LCD.drawString(end, 0, 2);
 		Delay.msDelay(1000);
 		//sends a message to the robot so that it will stop allow duplicates
 		Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
@@ -91,14 +82,14 @@ public class Line {
 		LCD.drawString("Connected", 0, 0);
 	}
 
-	public String convertBytes(int read, Byte[] buffer) {
+	public static String convertBytes(int read, byte[] buffer) {
 		String message = "";
-		for (int i= 0 ; i < b ; i++) {
-			message += (char)buffer[index];
+		for (int i= 0 ; i < buffer.length ; i++) {
+			message += (char)buffer[i];
 		}
+		return message;
 	}
 
-//
 	private static void calibrate() {
 		LCD.clear();
 		LCD.drawString("White", 1,1 );
@@ -177,7 +168,7 @@ class LookForLine implements Behavior{
 		}else {
 			Line.look = false;
 			Line.turn = 0;
-			Line.currentID = 0; // used because all barcodes will not be 0
+			Line.currentID = null; 
 		}
 	}
 
@@ -270,7 +261,7 @@ class BluetoothHandler implements Behavior{
 		Line.connection.write("not".getBytes(), "not".getBytes().length);
 		Delay.msDelay(50);
 		Line.connection.write(Line.buffer, read);
-		Line.currentID = read;
+		Line.currentID = Line.convertBytes(read, Line.buffer);
 		// testing
 	}
 
