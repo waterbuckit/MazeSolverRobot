@@ -15,8 +15,6 @@ import lejos.robotics.subsumption.Arbitrator;
 import lejos.robotics.subsumption.Behavior;
 import lejos.util.Delay;
 
-import java.io.InputStream;
-
 public class Line {
 
 	static BTConnection connection = null;
@@ -25,8 +23,8 @@ public class Line {
 	static int MAX_READ = 15;
 	static byte[] buffer = new byte[MAX_READ];
 	static DataInputStream in;
-	static int start;
-	static int end;
+	static String start;
+	static String end;
 	static LinkedList<Node> nodes;
 	static DifferentialPilot pilot;
 	static LightSensor ls;
@@ -43,8 +41,6 @@ public class Line {
 		ls = new LightSensor(SensorPort.S1,true);
 		pilot.setTravelSpeed(defaultSpeed);
 		nodes = new LinkedList<>();
-		in = connection.openDataInputStream();
-		out = connection.OpenDataOutputStream();
 		connectToPhone();
 		setStartandEnd();
 		calibrate();
@@ -59,14 +55,14 @@ public class Line {
 		LCD.clear();
 		LCD.drawString("Start: ", 0, 0);
 		//start = connection.read(buffer, MAX_READ);
-		start = in.readInt();
+		start = convertBytes(connection.read(buffer, MAX_READ), buffer);
 
 //		nodes.add(new Node(start));
 		Delay.msDelay(1000);
 		LCD.clear();
 		LCD.drawString("End: ", 0, 0);
 		//end = connection.read(buffer, MAX_READ);
-		end = in.readInt();
+		end = convertBytes(connection.read(buffer, MAX_READ), buffer);
 
 //		nodes.add(new Node(end));
 		Delay.msDelay(1000);
@@ -75,15 +71,21 @@ public class Line {
 		LCD.drawInt(end, 0, 2);
 		Delay.msDelay(1000);
 		//sends a message to the robot so that it will stop allow duplicates
-		//Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
-		out.write("corrected".getBytes(), "corrected".getBytes().length);
-
+		Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
 	}
 	private static void connectToPhone() {
 		LCD.drawString("Waiting  ", 0, 0);
 		Line.connection = Bluetooth.waitForConnection(0,  NXTConnection.RAW);
 		LCD.drawString("Connected", 0, 0);
 	}
+
+	public String convertBytes(int read, Byte[] buffer) {
+		String message = "";
+		for (int i= 0 ; i < b ; i++) {
+			message += (char)buffer[index];
+		}
+	}
+
 //
 	private static void calibrate() {
 		LCD.clear();
@@ -96,9 +98,9 @@ public class Line {
 		ls.calibrateLow();
 		LCD.clear();
 	}
-	static boolean checkNodes(int val) {
+	static boolean checkNodes(String val) {
 		for(Node node : nodes) {
-			if(node.getID() == val) {
+			if(node.getID().equals(val)) {
 				return true;
 			}
 		}
@@ -175,26 +177,26 @@ class LookForJunction implements Behavior{
 
 	@Override
 	public boolean takeControl() {
-		return Line.currentID != 0;
+		return Line.currentID != null;
 	}
 
 	@Override
 	public void action() {
 		Line.pilot.stop();
 		correct();
-		//Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
-		out.write("corrected".getBytes(), "corrected".getBytes().length);
+		Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
+
 
 		if(!Line.checkNodes(Line.currentID)) {
 			Line.nodes.add(new Node(Line.currentID));
 			Line.current = Line.nodes.get(Line.nodes.size()-1);
 		}else {
 			for(Node node : Line.nodes) {
-				if(node.getID() == Line.currentID) {
+				if(node.getID().equals(Line.currentID)) {
 					Line.current = node;
-					if(Line.current.getID() == Line.end) {
+					if(Line.current.getID().equals(Line.end)) {
 						System.exit(0);
-					}else if(Line.current.getID() == Line.start) {
+					}else if(Line.current.getID().equals(Line.start)) {
 //					}else if(Line.current.getID() == Line.start && Line.current.getTimesVisited() == 4) {
 						System.exit(0);
 					}
@@ -244,25 +246,15 @@ class BluetoothHandler implements Behavior{
 	public void action() {
 		LCD.drawString("Chars read: ", 0, 2);
 		LCD.drawInt(Line.connection.available(), 12, 2);
-
-		//int read = Line.connection.read(Line.buffer, Line.MAX_READ);
-		int read = in.readInt();
-
+		int read = Line.connection.read(Line.buffer, Line.MAX_READ);
 		LCD.drawChar('[', 3, 3);
 		// draw the read bytes to the screen as bytes.
-		for (int index= 0 ; index < read ; index++) {
-			LCD.drawChar((char)Line.buffer[index], index + 4, 3);
-		}
+		Line.convertBytes(read, Line.buffer);
 		LCD.drawChar(']', read + 4, 3);
 		// we've read something so we need to say we've corrected
-		//Line.connection.write("not".getBytes(), "not".getBytes().length);
-		out.write("not".getBytes(), "not".getBytes().length);
-
+		Line.connection.write("not".getBytes(), "not".getBytes().length);
 		Delay.msDelay(50);
 		Line.connection.write(Line.buffer, read);
-		//out.write("corrected".getBytes(), "corrected".getBytes().length);
-		out.write(Line.buffer, read);
-
 		Line.currentID = read;
 		// testing
 	}
@@ -302,13 +294,13 @@ class Follow implements Behavior{
 class Node {
 
 	int timesVisited = 0;
-	int id;
+	String id;
 
-	public Node(int id) {
+	public Node(String id) {
 		this.id = id;
 	}
 
-	public int getID() {
+	public String getID() {
 		return this.id;
 	}
 
