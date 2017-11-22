@@ -33,12 +33,12 @@ public class Line {
 	static final float defaultSpeed = 70;
 	static String currentID;
 	static Node current;
-	static boolean look;
-	static int turn;
+	static boolean look = false;
+	static int turn = 0;
 	private static double rotateSpeed = 30; 
 
 	public static void main(String args[]) {
-		pilot = new DifferentialPilot(56, 115, Motor.A, Motor.B);
+		pilot = new DifferentialPilot(56, 112, Motor.A, Motor.B);
 		ls = new LightSensor(SensorPort.S1,true);
 		pilot.setTravelSpeed(defaultSpeed);
 		pilot.setRotateSpeed(rotateSpeed);
@@ -48,7 +48,7 @@ public class Line {
 		calibrate();
 		Button.ENTER.waitForPressAndRelease(); // when we would like to start
 		Behavior[] behaviorList = {new Follow(),new LookForJunction(),
-				new LookForLine(), new TurnRight(), new TurnLeft(),
+				new TurnRight(), new TurnLeft(),new LookForLine(),
 				new BluetoothHandler(), new Stop()};
 				Arbitrator arb = new Arbitrator(behaviorList);
 		arb.start();
@@ -120,8 +120,11 @@ class TurnLeft implements Behavior{
 
 	@Override
 	public void action() {
-		Line.look = true;
+		LCD.clear(0);
+		LCD.drawString((Line.look) ? "true" : "false", 0, 0);
+		Delay.msDelay(1000);
 		Line.pilot.rotate(90);
+		Line.look = true;
 	}
 
 	@Override
@@ -139,8 +142,9 @@ class TurnRight implements Behavior{
 
 	@Override
 	public void action() {
-		Line.look = true;
-		Line.pilot.rotate(-90);
+		
+		Line.pilot.rotate(-90); // turn right
+		Line.look = true; // look for a line
 	}
 
 	@Override
@@ -154,31 +158,65 @@ class LookForLine implements Behavior{
 
 	@Override
 	public boolean takeControl() {
-		return Line.look; // will only look for a line after a rotation has been made
+		// TODO Auto-generated method stub
+		return Line.look;
 	}
 
 	@Override
 	public void action() {
 		LCD.clear(5);
 		LCD.drawInt(Line.ls.readValue(), 0, 5);
-		Delay.msDelay(500);
-		if(Line.ls.readValue() > 50) { // experimental light value? May need changing
+		Delay.msDelay(5000);
+		if(Line.ls.readValue() > 50) { // there is no line
 			Line.turn = 2;
+			Line.currentID = null;
 			Line.current.incrementTimesVisited();
-		}else {
 			Line.look = false;
+		}else {
 			Line.turn = 0;
-			Line.currentID = null; 
+			Line.look = false;
+			Line.currentID = null;
 		}
 	}
 
 	@Override
 	public void suppress() {
 		// TODO Auto-generated method stub
-
+		
 	}
-
+	
 }
+//class LookForLine implements Behavior{
+//
+//	@Override
+//	public boolean takeControl() {
+////		return true;
+//		return Line.look; // will only look for a line after a rotation has been made
+//	}
+//
+//	@Override
+//	public void action() {
+//		LCD.clear(5);
+//		LCD.drawInt(Line.ls.readValue(), 0, 1);
+//		Delay.msDelay(1000);
+//		if(Line.ls.readValue() > 50) { // there is no line
+//			Line.turn = 2; // turn right
+//			Line.current.incrementTimesVisited();
+//			Line.currentID = null;
+//		}else { // there is a line
+//			Line.look = false; // don't look for any more lines
+//			Line.turn = 0; // follow line
+//			Line.currentID = null; // don't look for any more junctions
+//		}
+//	}
+//
+//	@Override
+//	public void suppress() {
+//		// TODO Auto-generated method stub
+//
+//	}
+//
+//}
 class LookForJunction implements Behavior{
 
 	@Override
@@ -275,11 +313,11 @@ class Follow implements Behavior{
 	@Override
 	public boolean takeControl() {
 		// TODO Auto-generated method stub
-		return true;
+		return !Line.look;
 	}
 	private void printLightValue() {
 		LCD.clear(4);
-		LCD.drawInt(Line.ls.getLightValue(), 0, 4);
+		LCD.drawInt(Line.ls.readValue(), 0, 4);
 	}
 	@Override
 	public void action() {
