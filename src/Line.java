@@ -33,23 +33,26 @@ public class Line {
 	static int currentID;
 	static Node current;
 	static boolean look;
-	static int turn; 
+	static int turn;
+	private static double rotateSpeed = 30; 
 	
 	public static void main(String args[]) {
 		pilot = new DifferentialPilot(56, 115, Motor.A, Motor.B);
 		ls = new LightSensor(SensorPort.S1,true);
 		pilot.setTravelSpeed(defaultSpeed);
+		pilot.setRotateSpeed(rotateSpeed);
 		nodes = new LinkedList<>();
 		connectToPhone();
 		setStartandEnd();
 		calibrate();
 		Button.ENTER.waitForPressAndRelease(); // when we would like to start
-		Behavior[] behaviorList = {new Follow(), 
-				new LookForLine(), new TurnRight(), new TurnLeft(),new LookForJunction(),
+		Behavior[] behaviorList = {new Follow(),new LookForJunction() ,
+				new LookForLine(), new TurnRight(), new TurnLeft(),
 				new BluetoothHandler(), new Stop()};
 		Arbitrator arb = new Arbitrator(behaviorList);
 		arb.start();
 	}
+	
 	private static void setStartandEnd() {
 		LCD.clear();
 		LCD.drawString("Start: ", 0, 0);
@@ -106,7 +109,7 @@ class TurnLeft implements Behavior{
 	@Override
 	public void action() {
 		Line.look = true;
-		Line.pilot.rotate(-90);
+		Line.pilot.rotate(90);
 	}
 
 	@Override
@@ -125,7 +128,7 @@ class TurnRight implements Behavior{
 	@Override
 	public void action() {
 		Line.look = true;
-		Line.pilot.rotate(90);
+		Line.pilot.rotate(-90);
 	}
 
 	@Override
@@ -144,7 +147,10 @@ class LookForLine implements Behavior{
 
 	@Override
 	public void action() {
-		if(Line.ls.readValue() > 70) { // experimental light value? May need changing
+		LCD.clear(5);
+		LCD.drawInt(Line.ls.readValue(), 0, 5);
+		Delay.msDelay(500);
+		if(Line.ls.readValue() > 50) { // experimental light value? May need changing
 			Line.turn = 2;
 			Line.current.incrementTimesVisited();
 		}else {
@@ -218,7 +224,7 @@ class LookForJunction implements Behavior{
 	 * QR code.
 	 */
 	private void correct() {
-		Line.pilot.travel(100);
+		Line.pilot.travel(75);
 	}
 	
 }
