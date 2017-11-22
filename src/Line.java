@@ -15,36 +15,41 @@ import lejos.robotics.subsumption.Arbitrator;
 import lejos.robotics.subsumption.Behavior;
 import lejos.util.Delay;
 
+import java.io.InputStream;
+
 public class Line {
-	
+
 	static BTConnection connection = null;
 	static DataInputStream dis;
 	static DataOutputStream dos;
 	static int MAX_READ = 15;
 	static byte[] buffer = new byte[MAX_READ];
+	static DataInputStream in;
 	static int start;
 	static int end;
 	static LinkedList<Node> nodes;
 	static DifferentialPilot pilot;
 	static LightSensor ls;
-	static double maxValue;	
+	static double maxValue;
 	static double minValue;
 	static final float defaultSpeed = 70;
 	static int currentID;
 	static Node current;
 	static boolean look;
-	static int turn; 
-	
+	static int turn;
+
 	public static void main(String args[]) {
 		pilot = new DifferentialPilot(56, 115, Motor.A, Motor.B);
 		ls = new LightSensor(SensorPort.S1,true);
 		pilot.setTravelSpeed(defaultSpeed);
 		nodes = new LinkedList<>();
+		in = connection.openDataInputStream();
+		out = connection.OpenDataOutputStream();
 		connectToPhone();
 		setStartandEnd();
 		calibrate();
 		Button.ENTER.waitForPressAndRelease(); // when we would like to start
-		Behavior[] behaviorList = {new Follow(), 
+		Behavior[] behaviorList = {new Follow(),
 				new LookForLine(), new TurnRight(), new TurnLeft(),new LookForJunction(),
 				new BluetoothHandler(), new Stop()};
 		Arbitrator arb = new Arbitrator(behaviorList);
@@ -53,13 +58,16 @@ public class Line {
 	private static void setStartandEnd() {
 		LCD.clear();
 		LCD.drawString("Start: ", 0, 0);
-		start = connection.read(buffer, MAX_READ);
-		
+		//start = connection.read(buffer, MAX_READ);
+		start = in.readInt();
+
 //		nodes.add(new Node(start));
 		Delay.msDelay(1000);
 		LCD.clear();
 		LCD.drawString("End: ", 0, 0);
-		end = connection.read(buffer, MAX_READ);
+		//end = connection.read(buffer, MAX_READ);
+		end = in.readInt();
+
 //		nodes.add(new Node(end));
 		Delay.msDelay(1000);
 		LCD.clear();
@@ -67,14 +75,16 @@ public class Line {
 		LCD.drawInt(end, 0, 2);
 		Delay.msDelay(1000);
 		//sends a message to the robot so that it will stop allow duplicates
-		Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
+		//Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
+		out.write("corrected".getBytes(), "corrected".getBytes().length);
+
 	}
 	private static void connectToPhone() {
 		LCD.drawString("Waiting  ", 0, 0);
 		Line.connection = Bluetooth.waitForConnection(0,  NXTConnection.RAW);
 		LCD.drawString("Connected", 0, 0);
 	}
-//		
+//
 	private static void calibrate() {
 		LCD.clear();
 		LCD.drawString("White", 1,1 );
@@ -85,7 +95,7 @@ public class Line {
 		Button.ENTER.waitForPressAndRelease();
 		ls.calibrateLow();
 		LCD.clear();
-	}	
+	}
 	static boolean checkNodes(int val) {
 		for(Node node : nodes) {
 			if(node.getID() == val) {
@@ -111,9 +121,9 @@ class TurnLeft implements Behavior{
 
 	@Override
 	public void suppress() {
-		
+
 	}
-	
+
 }
 class TurnRight implements Behavior{
 
@@ -131,9 +141,9 @@ class TurnRight implements Behavior{
 	@Override
 	public void suppress() {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 }
 class LookForLine implements Behavior{
 
@@ -157,9 +167,9 @@ class LookForLine implements Behavior{
 	@Override
 	public void suppress() {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 }
 class LookForJunction implements Behavior{
 
@@ -172,9 +182,9 @@ class LookForJunction implements Behavior{
 	public void action() {
 		Line.pilot.stop();
 		correct();
-		Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
-		
-		
+		//Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
+		out.write("corrected".getBytes(), "corrected".getBytes().length);
+
 		if(!Line.checkNodes(Line.currentID)) {
 			Line.nodes.add(new Node(Line.currentID));
 			Line.current = Line.nodes.get(Line.nodes.size()-1);
@@ -191,7 +201,7 @@ class LookForJunction implements Behavior{
 				}
 			}
 		}
-		
+
 		Line.current.incrementTimesVisited();
 		Line.turn = 1;
 //		if(current.getTimesVisited() == 4) {
@@ -206,25 +216,25 @@ class LookForJunction implements Behavior{
 //				return;
 //			}
 //		}
-		
+
 	}
 
 	@Override
 	public void suppress() {
-		
+
 	}
 	/**
-	 * Make the robot move forwards 10cm to correct the robot over the top of the 
+	 * Make the robot move forwards 10cm to correct the robot over the top of the
 	 * QR code.
 	 */
 	private void correct() {
 		Line.pilot.travel(100);
 	}
-	
+
 }
 
 class BluetoothHandler implements Behavior{
-	
+
 	@Override
 	public boolean takeControl() {
 		return (Line.connection != null && Line.connection.available() > 0);
@@ -234,25 +244,33 @@ class BluetoothHandler implements Behavior{
 	public void action() {
 		LCD.drawString("Chars read: ", 0, 2);
 		LCD.drawInt(Line.connection.available(), 12, 2);
-		int read = Line.connection.read(Line.buffer, Line.MAX_READ);
+
+		//int read = Line.connection.read(Line.buffer, Line.MAX_READ);
+		int read = in.readInt();
+
 		LCD.drawChar('[', 3, 3);
 		// draw the read bytes to the screen as bytes.
-		for (int index= 0 ; index < read ; index++) {						
+		for (int index= 0 ; index < read ; index++) {
 			LCD.drawChar((char)Line.buffer[index], index + 4, 3);
 		}
 		LCD.drawChar(']', read + 4, 3);
 		// we've read something so we need to say we've corrected
-		Line.connection.write("not".getBytes(), "not".getBytes().length);
+		//Line.connection.write("not".getBytes(), "not".getBytes().length);
+		out.write("not".getBytes(), "not".getBytes().length);
+
 		Delay.msDelay(50);
 		Line.connection.write(Line.buffer, read);
+		//out.write("corrected".getBytes(), "corrected".getBytes().length);
+		out.write(Line.buffer, read);
+
 		Line.currentID = read;
-		// testing 
+		// testing
 	}
 
 	@Override
 	public void suppress() {
 	}
-	
+
 }
 class Follow implements Behavior{
 
@@ -279,25 +297,25 @@ class Follow implements Behavior{
 	@Override
 	public void suppress() {
 	}
-	
+
 }
 class Node {
-	
+
 	int timesVisited = 0;
 	int id;
-	
+
 	public Node(int id) {
 		this.id = id;
 	}
-	
+
 	public int getID() {
 		return this.id;
 	}
-	
+
 	public int getTimesVisited() {
 		return this.timesVisited;
 	}
-	
+
 	public void incrementTimesVisited() {
 		this.timesVisited++;
 	}
@@ -317,5 +335,5 @@ class Stop implements Behavior{
 	@Override
 	public void suppress() {
 	}
-	
+
 }
