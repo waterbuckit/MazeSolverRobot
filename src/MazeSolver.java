@@ -15,7 +15,7 @@ import lejos.robotics.subsumption.Arbitrator;
 import lejos.robotics.subsumption.Behavior;
 import lejos.util.Delay;
 
-public class Line {
+public class MazeSolver {
 
 	static BTConnection connection = null;
 	static DataInputStream dis;
@@ -60,7 +60,7 @@ public class Line {
 		//start = connection.read(buffer, MAX_READ);
 		start = convertBytes(connection.read(buffer, MAX_READ), buffer);
 
-//		nodes.add(new Node(start));
+		nodes.add(new Node(start));
 		Delay.msDelay(1000);
 		LCD.clear();
 		LCD.drawString("End: ", 0, 0);
@@ -74,11 +74,11 @@ public class Line {
 		LCD.drawString(end, 0, 2);
 		Delay.msDelay(1000);
 		//sends a message to the robot so that it will stop allow duplicates
-		Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
+		MazeSolver.connection.write("corrected".getBytes(), "corrected".getBytes().length);
 	}
 	private static void connectToPhone() {
 		LCD.drawString("Waiting  ", 0, 0);
-		Line.connection = Bluetooth.waitForConnection(0,  NXTConnection.RAW);
+		MazeSolver.connection = Bluetooth.waitForConnection(0,  NXTConnection.RAW);
 		LCD.drawString("Connected", 0, 0);
 	}
 
@@ -115,16 +115,16 @@ class TurnLeft implements Behavior{
 
 	@Override
 	public boolean takeControl() {
-		return Line.turn == 1;
+		return MazeSolver.turn == 1;
 	}
 
 	@Override
 	public void action() {
 		LCD.clear(0);
-		LCD.drawString((Line.look) ? "true" : "false", 0, 0);
+		LCD.drawString((MazeSolver.look) ? "true" : "false", 0, 0);
 		Delay.msDelay(1000);
-		Line.pilot.rotate(90);
-		Line.look = true;
+		MazeSolver.pilot.rotate(90);
+		MazeSolver.look = true;
 	}
 
 	@Override
@@ -137,14 +137,14 @@ class TurnRight implements Behavior{
 
 	@Override
 	public boolean takeControl() {
-		return Line.turn == 2;
+		return MazeSolver.turn == 2;
 	}
 
 	@Override
 	public void action() {
 		
-		Line.pilot.rotate(-90); // turn right
-		Line.look = true; // look for a line
+		MazeSolver.pilot.rotate(-90); // turn right
+		MazeSolver.look = true; // look for a line
 	}
 
 	@Override
@@ -159,23 +159,23 @@ class LookForLine implements Behavior{
 	@Override
 	public boolean takeControl() {
 		// TODO Auto-generated method stub
-		return Line.look;
+		return MazeSolver.look;
 	}
 
 	@Override
 	public void action() {
 		LCD.clear(5);
-		LCD.drawInt(Line.ls.readValue(), 0, 5);
+		LCD.drawInt(MazeSolver.ls.readValue(), 0, 5);
 		Delay.msDelay(5000);
-		if(Line.ls.readValue() > 50) { // there is no line
-			Line.turn = 2;
-			Line.currentID = null;
-			Line.current.incrementTimesVisited();
-			Line.look = false;
+		if(MazeSolver.ls.readValue() > 50) { // there is no line
+			MazeSolver.turn = 2;
+			MazeSolver.currentID = null;
+			MazeSolver.current.incrementTimesVisited();
+			MazeSolver.look = false;
 		}else {
-			Line.turn = 0;
-			Line.look = false;
-			Line.currentID = null;
+			MazeSolver.turn = 0;
+			MazeSolver.look = false;
+			MazeSolver.currentID = null;
 		}
 	}
 
@@ -221,35 +221,35 @@ class LookForJunction implements Behavior{
 
 	@Override
 	public boolean takeControl() {
-		return Line.currentID != null;
+		return MazeSolver.currentID != null;
 	}
 
 	@Override
 	public void action() {
-		Line.pilot.stop();
+		MazeSolver.pilot.stop();
 		correct();
-		Line.connection.write("corrected".getBytes(), "corrected".getBytes().length);
+		MazeSolver.connection.write("corrected".getBytes(), "corrected".getBytes().length);
 
 
-		if(!Line.checkNodes(Line.currentID)) {
-			Line.nodes.add(new Node(Line.currentID));
-			Line.current = Line.nodes.get(Line.nodes.size()-1);
+		if(!MazeSolver.checkNodes(MazeSolver.currentID)) {
+			MazeSolver.nodes.add(new Node(MazeSolver.currentID));
+			MazeSolver.current = MazeSolver.nodes.get(MazeSolver.nodes.size()-1);
 		}else {
-			for(Node node : Line.nodes) {
-				if(node.getID().equals(Line.currentID)) {
-					Line.current = node;
-					if(Line.current.getID().equals(Line.end)) {
+			for(Node node : MazeSolver.nodes) {
+				if(node.getID().equals(MazeSolver.currentID)) {
+					MazeSolver.current = node;
+					if(MazeSolver.current.getID().equals(MazeSolver.end)) {
 						System.exit(0);
-					}else if(Line.current.getID().equals(Line.start)) {
-//					}else if(Line.current.getID() == Line.start && Line.current.getTimesVisited() == 4) {
+//					}else if(Line.current.getID().equals(Line.start)) {
+					}else if(MazeSolver.current.getID() == MazeSolver.start && MazeSolver.current.getTimesVisited() == 4) {
 						System.exit(0);
 					}
 				}
 			}
 		}
 
-		Line.current.incrementTimesVisited();
-		Line.turn = 1;
+		MazeSolver.current.incrementTimesVisited();
+		MazeSolver.turn = 1;
 //		if(current.getTimesVisited() == 4) {
 //			Line.pilot.rotate(-90);
 //			Line.nodes.remove(current);
@@ -274,7 +274,7 @@ class LookForJunction implements Behavior{
 	 * QR code.
 	 */
 	private void correct() {
-		Line.pilot.travel(75);
+		MazeSolver.pilot.travel(75);
 	}
 
 }
@@ -283,23 +283,23 @@ class BluetoothHandler implements Behavior{
 
 	@Override
 	public boolean takeControl() {
-		return (Line.connection != null && Line.connection.available() > 0);
+		return (MazeSolver.connection != null && MazeSolver.connection.available() > 0);
 	}
 
 	@Override
 	public void action() {
 		LCD.drawString("Chars read: ", 0, 2);
-		LCD.drawInt(Line.connection.available(), 12, 2);
-		int read = Line.connection.read(Line.buffer, Line.MAX_READ);
+		LCD.drawInt(MazeSolver.connection.available(), 12, 2);
+		int read = MazeSolver.connection.read(MazeSolver.buffer, MazeSolver.MAX_READ);
 		LCD.drawChar('[', 3, 3);
 		// draw the read bytes to the screen as bytes.
-		Line.convertBytes(read, Line.buffer);
+		MazeSolver.convertBytes(read, MazeSolver.buffer);
 		LCD.drawChar(']', read + 4, 3);
 		// we've read something so we need to say we've corrected
-		Line.connection.write("not".getBytes(), "not".getBytes().length);
+		MazeSolver.connection.write("not".getBytes(), "not".getBytes().length);
 		Delay.msDelay(50);
-		Line.connection.write(Line.buffer, read);
-		Line.currentID = Line.convertBytes(read, Line.buffer);
+		MazeSolver.connection.write(MazeSolver.buffer, read);
+		MazeSolver.currentID = MazeSolver.convertBytes(read, MazeSolver.buffer);
 		// testing
 	}
 
@@ -313,21 +313,21 @@ class Follow implements Behavior{
 	@Override
 	public boolean takeControl() {
 		// TODO Auto-generated method stub
-		return !Line.look;
+		return !MazeSolver.look;
 	}
 	private void printLightValue() {
 		LCD.clear(4);
-		LCD.drawInt(Line.ls.readValue(), 0, 4);
+		LCD.drawInt(MazeSolver.ls.readValue(), 0, 4);
 	}
 	@Override
 	public void action() {
 		printLightValue();
-		Line.pilot.forward();
-		int val = Line.ls.readValue();
+		MazeSolver.pilot.forward();
+		int val = MazeSolver.ls.readValue();
 		// set the speed of the motors proportional to light value
 		// will follow the left side of a line
-		Motor.A.setSpeed((val/100)*Line.defaultSpeed);
-		Motor.B.setSpeed(Line.defaultSpeed - (val/100)*Line.defaultSpeed);
+		Motor.A.setSpeed((val/100)*MazeSolver.defaultSpeed);
+		Motor.B.setSpeed(MazeSolver.defaultSpeed - (val/100)*MazeSolver.defaultSpeed);
 	}
 
 	@Override
