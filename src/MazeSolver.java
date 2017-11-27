@@ -186,37 +186,6 @@ class LookForLine implements Behavior{
 	}
 	
 }
-//class LookForLine implements Behavior{
-//
-//	@Override
-//	public boolean takeControl() {
-////		return true;
-//		return Line.look; // will only look for a line after a rotation has been made
-//	}
-//
-//	@Override
-//	public void action() {
-//		LCD.clear(5);
-//		LCD.drawInt(Line.ls.readValue(), 0, 1);
-//		Delay.msDelay(1000);
-//		if(Line.ls.readValue() > 50) { // there is no line
-//			Line.turn = 2; // turn right
-//			Line.current.incrementTimesVisited();
-//			Line.currentID = null;
-//		}else { // there is a line
-//			Line.look = false; // don't look for any more lines
-//			Line.turn = 0; // follow line
-//			Line.currentID = null; // don't look for any more junctions
-//		}
-//	}
-//
-//	@Override
-//	public void suppress() {
-//		// TODO Auto-generated method stub
-//
-//	}
-//
-//}
 class LookForJunction implements Behavior{
 
 	@Override
@@ -234,14 +203,16 @@ class LookForJunction implements Behavior{
 		if(!MazeSolver.checkNodes(MazeSolver.currentID)) {
 			MazeSolver.nodes.add(new Node(MazeSolver.currentID));
 			MazeSolver.current = MazeSolver.nodes.get(MazeSolver.nodes.size()-1);
+			if(MazeSolver.current.getID().equals(MazeSolver.end)) { // when we find the end, stop
+				System.exit(0);
+			}
 		}else {
 			for(Node node : MazeSolver.nodes) {
 				if(node.getID().equals(MazeSolver.currentID)) {
 					MazeSolver.current = node;
-					if(MazeSolver.current.getID().equals(MazeSolver.end)) {
-						System.exit(0);
-//					}else if(Line.current.getID().equals(Line.start)) {
-					}else if(MazeSolver.current.getID() == MazeSolver.start && MazeSolver.current.getTimesVisited() == 4) {
+					// if this node is the start, check these conditions
+					if(MazeSolver.current.getID().equals(MazeSolver.start)
+							&& MazeSolver.current.getTimesVisited() == 4) {
 						System.exit(0);
 					}
 				}
@@ -315,13 +286,13 @@ class Follow implements Behavior{
 		// TODO Auto-generated method stub
 		return !MazeSolver.look;
 	}
-	private void printLightValue() {
+	private void printLightValue_desu() {
 		LCD.clear(4);
 		LCD.drawInt(MazeSolver.ls.readValue(), 0, 4);
 	}
 	@Override
 	public void action() {
-		printLightValue();
+		printLightValue_desu();
 		MazeSolver.pilot.forward();
 		int val = MazeSolver.ls.readValue();
 		// set the speed of the motors proportional to light value
