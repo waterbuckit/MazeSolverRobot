@@ -16,7 +16,7 @@ import lejos.robotics.subsumption.Behavior;
 import lejos.util.Delay;
 
 public class MazeSolver {
-
+		
 	static BTConnection connection = null;
 	static DataInputStream dis;
 	static DataOutputStream dos;
@@ -30,7 +30,7 @@ public class MazeSolver {
 	static LightSensor ls;
 	static double maxValue;
 	static double minValue;
-	static final float defaultSpeed = 70;
+	static final float defaultSpeed = 55;
 	static String currentID;
 	static Node current;
 	static boolean look = false;
@@ -43,9 +43,9 @@ public class MazeSolver {
 		pilot.setTravelSpeed(defaultSpeed);
 		pilot.setRotateSpeed(rotateSpeed);
 		nodes = new LinkedList<>();
-		connectToPhone();
-		setStartandEnd();
-		calibrate();
+		connectToPhone_desu();
+		setStartandEnd_desu();
+		calibrate_desu();
 		Button.ENTER.waitForPressAndRelease(); // when we would like to start
 		Behavior[] behaviorList = {new Follow(),new LookForJunction(),
 				new TurnRight(), new TurnLeft(),new LookForLine(),
@@ -54,18 +54,18 @@ public class MazeSolver {
 		arb.start();
 	}
 	
-	private static void setStartandEnd() {
+	private static void setStartandEnd_desu() {
 		LCD.clear();
 		LCD.drawString("Start: ", 0, 0);
 		//start = connection.read(buffer, MAX_READ);
-		start = convertBytes(connection.read(buffer, MAX_READ), buffer);
+		start = convertBytes_desu(connection.read(buffer, MAX_READ), buffer);
 
 		nodes.add(new Node(start));
 		Delay.msDelay(1000);
 		LCD.clear();
 		LCD.drawString("End: ", 0, 0);
 		//end = connection.read(buffer, MAX_READ);
-		end = convertBytes(connection.read(buffer, MAX_READ), buffer);
+		end = convertBytes_desu(connection.read(buffer, MAX_READ), buffer);
 
 //		nodes.add(new Node(end));
 		Delay.msDelay(1000);
@@ -76,13 +76,13 @@ public class MazeSolver {
 		//sends a message to the robot so that it will stop allow duplicates
 		MazeSolver.connection.write("corrected".getBytes(), "corrected".getBytes().length);
 	}
-	private static void connectToPhone() {
+	private static void connectToPhone_desu() {
 		LCD.drawString("Waiting  ", 0, 0);
 		MazeSolver.connection = Bluetooth.waitForConnection(0,  NXTConnection.RAW);
 		LCD.drawString("Connected", 0, 0);
 	}
 
-	public static String convertBytes(int read, byte[] buffer) {
+	public static String convertBytes_desu(int read, byte[] buffer) {
 		String message = "";
 		for (int i= 0 ; i < buffer.length ; i++) {
 			message += (char)buffer[i];
@@ -90,7 +90,7 @@ public class MazeSolver {
 		return message;
 	}
 
-	private static void calibrate() {
+	private static void calibrate_desu() {
 		LCD.clear();
 		LCD.drawString("White", 1,1 );
 		Button.ENTER.waitForPressAndRelease();
@@ -101,9 +101,9 @@ public class MazeSolver {
 		ls.calibrateLow();
 		LCD.clear();
 	}
-	static boolean checkNodes(String val) {
+	static boolean checkNodes_desu(String val) {
 		for(Node node : nodes) {
-			if(node.getID().equals(val)) {
+			if(node.getID_desu().equals(val)) {
 				return true;
 			}
 		}
@@ -170,7 +170,7 @@ class LookForLine implements Behavior{
 		if(MazeSolver.ls.readValue() > 50) { // there is no line
 			MazeSolver.turn = 2;
 			MazeSolver.currentID = null;
-			MazeSolver.current.incrementTimesVisited();
+			MazeSolver.current.incrementTimesVisited_desu();
 			MazeSolver.look = false;
 		}else {
 			MazeSolver.turn = 0;
@@ -196,30 +196,30 @@ class LookForJunction implements Behavior{
 	@Override
 	public void action() {
 		MazeSolver.pilot.stop();
-		correct();
+		correct_desu();
 		MazeSolver.connection.write("corrected".getBytes(), "corrected".getBytes().length);
 
 
-		if(!MazeSolver.checkNodes(MazeSolver.currentID)) {
+		if(!MazeSolver.checkNodes_desu(MazeSolver.currentID)) {
 			MazeSolver.nodes.add(new Node(MazeSolver.currentID));
 			MazeSolver.current = MazeSolver.nodes.get(MazeSolver.nodes.size()-1);
-			if(MazeSolver.current.getID().equals(MazeSolver.end)) { // when we find the end, stop
+			if(MazeSolver.current.getID_desu().equals(MazeSolver.end)) { // when we find the end, stop
 				System.exit(0);
 			}
 		}else {
 			for(Node node : MazeSolver.nodes) {
-				if(node.getID().equals(MazeSolver.currentID)) {
+				if(node.getID_desu().equals(MazeSolver.currentID)) {
 					MazeSolver.current = node;
 					// if this node is the start, check these conditions
-					if(MazeSolver.current.getID().equals(MazeSolver.start)
-							&& MazeSolver.current.getTimesVisited() == 4) {
+					if(MazeSolver.current.getID_desu().equals(MazeSolver.start)
+							&& MazeSolver.current.getTimesVisited_desu() == 4) {
 						System.exit(0);
 					}
 				}
 			}
 		}
 
-		MazeSolver.current.incrementTimesVisited();
+		MazeSolver.current.incrementTimesVisited_desu();
 		MazeSolver.turn = 1;
 //		if(current.getTimesVisited() == 4) {
 //			Line.pilot.rotate(-90);
@@ -244,7 +244,7 @@ class LookForJunction implements Behavior{
 	 * Make the robot move forwards 10cm to correct the robot over the top of the
 	 * QR code.
 	 */
-	private void correct() {
+	private void correct_desu() {
 		MazeSolver.pilot.travel(75);
 	}
 
@@ -264,13 +264,13 @@ class BluetoothHandler implements Behavior{
 		int read = MazeSolver.connection.read(MazeSolver.buffer, MazeSolver.MAX_READ);
 		LCD.drawChar('[', 3, 3);
 		// draw the read bytes to the screen as bytes.
-		MazeSolver.convertBytes(read, MazeSolver.buffer);
+		MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
 		LCD.drawChar(']', read + 4, 3);
 		// we've read something so we need to say we've corrected
 		MazeSolver.connection.write("not".getBytes(), "not".getBytes().length);
 		Delay.msDelay(50);
 		MazeSolver.connection.write(MazeSolver.buffer, read);
-		MazeSolver.currentID = MazeSolver.convertBytes(read, MazeSolver.buffer);
+		MazeSolver.currentID = MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
 		// testing
 	}
 
@@ -280,7 +280,9 @@ class BluetoothHandler implements Behavior{
 
 }
 class Follow implements Behavior{
-
+private float multiple = 0.3f;
+private int min = 30;
+private int max = 54;
 	@Override
 	public boolean takeControl() {
 		// TODO Auto-generated method stub
@@ -294,11 +296,25 @@ class Follow implements Behavior{
 	public void action() {
 		printLightValue_desu();
 		MazeSolver.pilot.forward();
-		int val = MazeSolver.ls.readValue();
+		int val = MazeSolver.ls.getLightValue();
+		
+//		if(val < min) {
+//			val = min++;
+//		}
+//		if(max < val) {
+//			val = max--;
+//		}
 		// set the speed of the motors proportional to light value
 		// will follow the left side of a line
-		Motor.A.setSpeed((val/100)*MazeSolver.defaultSpeed);
-		Motor.B.setSpeed(MazeSolver.defaultSpeed - (val/100)*MazeSolver.defaultSpeed);
+		
+//		Motor.A.setSpeed(80 + (15 * (val - min)));
+//		Motor.B.setSpeed(80 + (15 * (max - val)));
+//		Motor.A.setSpeed(((float)(val/100.0)*80)- 25);
+//		Motor.B.setSpeed(30 - Motor.A.getSpeed());
+		Motor.B.setSpeed((float)((val
+				/100.0)*MazeSolver.defaultSpeed));
+		Motor.A.setSpeed(Motor.A.getSpeed());
+//		Motor.B.setSpeed((MazeSolver.defaultSpeed - (float)(val/100.0)*MazeSolver.defaultSpeed)-25);
 	}
 
 	@Override
@@ -315,15 +331,15 @@ class Node {
 		this.id = id;
 	}
 
-	public String getID() {
+	public String getID_desu() {
 		return this.id;
 	}
 
-	public int getTimesVisited() {
+	public int getTimesVisited_desu() {
 		return this.timesVisited;
 	}
 
-	public void incrementTimesVisited() {
+	public void incrementTimesVisited_desu() {
 		this.timesVisited++;
 	}
 }
