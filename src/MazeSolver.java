@@ -6,7 +6,10 @@ import lejos.nxt.Button;
 import lejos.nxt.LCD;
 import lejos.nxt.LightSensor;
 import lejos.nxt.Motor;
+import lejos.nxt.MotorPort;
+import lejos.nxt.NXTMotor;
 import lejos.nxt.SensorPort;
+import lejos.nxt.TachoMotorPort;
 import lejos.nxt.comm.BTConnection;
 import lejos.nxt.comm.Bluetooth;
 import lejos.nxt.comm.NXTConnection;
@@ -30,15 +33,19 @@ public class MazeSolver {
 	static LightSensor ls;
 	static double maxValue;
 	static double minValue;
-	static final float defaultSpeed = 55;
+	static final float defaultSpeed = 120;
 	static String currentID;
 	static Node current;
 	static boolean look = false;
 	static int turn = 0;
 	private static double rotateSpeed = 30; 
+	static NXTMotor motorA;
+	static NXTMotor motorB;
 
 	public static void main(String args[]) {
-		pilot = new DifferentialPilot(56, 112, Motor.A, Motor.B);
+		motorA = new NXTMotor(MotorPort.A);
+		motorB = new NXTMotor(MotorPort.B);
+		pilot = new DifferentialPilot(56, 112, Motor.B, Motor.A);
 		ls = new LightSensor(SensorPort.S1,true);
 		pilot.setTravelSpeed(defaultSpeed);
 		pilot.setRotateSpeed(rotateSpeed);
@@ -262,6 +269,7 @@ class BluetoothHandler implements Behavior{
 		LCD.drawString("Chars read: ", 0, 2);
 		LCD.drawInt(MazeSolver.connection.available(), 12, 2);
 		int read = MazeSolver.connection.read(MazeSolver.buffer, MazeSolver.MAX_READ);
+		// an attempt to prevent the robot from processing random values read from the board
 		LCD.drawChar('[', 3, 3);
 		// draw the read bytes to the screen as bytes.
 		MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
@@ -280,9 +288,7 @@ class BluetoothHandler implements Behavior{
 
 }
 class Follow implements Behavior{
-private float multiple = 0.3f;
-private int min = 30;
-private int max = 54;
+
 	@Override
 	public boolean takeControl() {
 		// TODO Auto-generated method stub
@@ -295,9 +301,26 @@ private int max = 54;
 	@Override
 	public void action() {
 		printLightValue_desu();
-		MazeSolver.pilot.forward();
+//		MazeSolver.pilot.forward();
+
 		int val = MazeSolver.ls.getLightValue();
-		
+		float motorBSpeed = (float)((val
+				/100.0)*(MazeSolver.defaultSpeed+50)-50);
+		float motorASpeed = (MazeSolver.defaultSpeed - (float)((val/100.0)*(MazeSolver.defaultSpeed+50)-50));
+		if(motorASpeed < 0) {
+			Motor.A.setSpeed(motorASpeed);
+			Motor.A.backward();
+		}else {
+			Motor.A.setSpeed(motorASpeed);
+			Motor.A.forward();
+		}
+		if(motorBSpeed < 0) {
+			Motor.B.setSpeed(motorBSpeed);
+			Motor.B.backward();
+		}else {
+			Motor.B.setSpeed(motorBSpeed);
+			Motor.B.forward();
+		}
 //		if(val < min) {
 //			val = min++;
 //		}
@@ -306,15 +329,14 @@ private int max = 54;
 //		}
 		// set the speed of the motors proportional to light value
 		// will follow the left side of a line
-		
 //		Motor.A.setSpeed(80 + (15 * (val - min)));
 //		Motor.B.setSpeed(80 + (15 * (max - val)));
-//		Motor.A.setSpeed(((float)(val/100.0)*80)- 25);
-//		Motor.B.setSpeed(30 - Motor.A.getSpeed());
-		Motor.B.setSpeed((float)((val
-				/100.0)*MazeSolver.defaultSpeed));
-		Motor.A.setSpeed(Motor.A.getSpeed());
-//		Motor.B.setSpeed((MazeSolver.defaultSpeed - (float)(val/100.0)*MazeSolver.defaultSpeed)-25);
+//		Motor.B.setSpeed(((float)(val/100.0)*80)- 25);
+//		Motor.A.setSpeed(30 - Motor.A.getSpeed());
+		
+//		Motor.B.setSpeed((float)((val
+//				/100.0)*(MazeSolver.defaultSpeed)));
+//		Motor.A.setSpeed((MazeSolver.defaultSpeed - (float)(val/100.0)*(MazeSolver.defaultSpeed)));
 	}
 
 	@Override
