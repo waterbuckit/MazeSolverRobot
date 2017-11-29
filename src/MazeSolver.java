@@ -9,6 +9,7 @@ import lejos.nxt.Motor;
 import lejos.nxt.MotorPort;
 import lejos.nxt.NXTMotor;
 import lejos.nxt.SensorPort;
+import lejos.nxt.Sound;
 import lejos.nxt.TachoMotorPort;
 import lejos.nxt.comm.BTConnection;
 import lejos.nxt.comm.Bluetooth;
@@ -43,6 +44,8 @@ public class MazeSolver {
 	static NXTMotor motorB;
 
 	public static void main(String args[]) {
+//		Thread thread = new Thread(new Cancer());
+//		thread.start();
 		motorA = new NXTMotor(MotorPort.A);
 		motorB = new NXTMotor(MotorPort.B);
 		pilot = new DifferentialPilot(56, 112, Motor.B, Motor.A);
@@ -60,7 +63,6 @@ public class MazeSolver {
 				Arbitrator arb = new Arbitrator(behaviorList);
 		arb.start();
 	}
-	
 	private static void setStartandEnd_desu() {
 		LCD.clear();
 		LCD.drawString("Start: ", 0, 0);
@@ -305,8 +307,8 @@ class Follow implements Behavior{
 
 		int val = MazeSolver.ls.getLightValue();
 		float motorBSpeed = (float)((val
-				/100.0)*(MazeSolver.defaultSpeed+50)-50);
-		float motorASpeed = (MazeSolver.defaultSpeed - (float)((val/100.0)*(MazeSolver.defaultSpeed+50)-50));
+				/100.0)*(MazeSolver.defaultSpeed+60)-60);
+		float motorASpeed = (MazeSolver.defaultSpeed - (float)((val/100.0)*(MazeSolver.defaultSpeed+60)-60));
 		if(motorASpeed < 0) {
 			Motor.A.setSpeed(motorASpeed);
 			Motor.A.backward();
@@ -381,4 +383,23 @@ class Stop implements Behavior{
 	public void suppress() {
 	}
 
+}
+
+class Cancer implements Runnable{
+	
+	int[] freak = {523,784,659};
+	public Cancer() {
+		Sound.setVolume((int)(Sound.VOL_MAX * 0.1));
+	}
+	@Override
+	public void run() {
+		int count = 0;
+		while(true) {
+			Sound.playNote(Sound.XYLOPHONE, this.freak[count],300);
+			count++;
+			if(count >= 3) {
+				count = 0;
+			}
+		}
+	}
 }
