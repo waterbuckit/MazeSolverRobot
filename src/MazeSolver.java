@@ -24,7 +24,7 @@ public class MazeSolver {
 	static BTConnection connection = null;
 	static DataInputStream dis;
 	static DataOutputStream dos;
-	static int MAX_READ = 15;
+	static int MAX_READ = 3;
 	static byte[] buffer = new byte[MAX_READ];
 	static DataInputStream in;
 	static String start;
@@ -34,18 +34,18 @@ public class MazeSolver {
 	static LightSensor ls;
 	static double maxValue;
 	static double minValue;
-	static final float defaultSpeed = 120;
+	static final float defaultSpeed = 130;
 	static String currentID;
 	static Node current;
 	static boolean look = false;
 	static int turn = 0;
-	private static double rotateSpeed = 30; 
+	private static double rotateSpeed = 40; 
 	static NXTMotor motorA;
 	static NXTMotor motorB;
 
 	public static void main(String args[]) {
-//		Thread thread = new Thread(new Cancer());
-//		thread.start();
+		Thread thread = new Thread(new Cancer());
+		thread.start();
 		motorA = new NXTMotor(MotorPort.A);
 		motorB = new NXTMotor(MotorPort.B);
 		pilot = new DifferentialPilot(56, 112, Motor.B, Motor.A);
@@ -68,7 +68,6 @@ public class MazeSolver {
 		LCD.drawString("Start: ", 0, 0);
 		//start = connection.read(buffer, MAX_READ);
 		start = convertBytes_desu(connection.read(buffer, MAX_READ), buffer);
-
 		nodes.add(new Node(start));
 		Delay.msDelay(1000);
 		LCD.clear();
@@ -254,7 +253,7 @@ class LookForJunction implements Behavior{
 	 * QR code.
 	 */
 	private void correct_desu() {
-		MazeSolver.pilot.travel(75);
+		MazeSolver.pilot.travel(60);
 	}
 
 }
@@ -271,14 +270,13 @@ class BluetoothHandler implements Behavior{
 		LCD.drawString("Chars read: ", 0, 2);
 		LCD.drawInt(MazeSolver.connection.available(), 12, 2);
 		int read = MazeSolver.connection.read(MazeSolver.buffer, MazeSolver.MAX_READ);
-		// an attempt to prevent the robot from processing random values read from the board
 		LCD.drawChar('[', 3, 3);
 		// draw the read bytes to the screen as bytes.
 		MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
 		LCD.drawChar(']', read + 4, 3);
 		// we've read something so we need to say we've corrected
 		MazeSolver.connection.write("not".getBytes(), "not".getBytes().length);
-		Delay.msDelay(50);
+//		Delay.msDelay(50);
 		MazeSolver.connection.write(MazeSolver.buffer, read);
 		MazeSolver.currentID = MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
 		// testing
@@ -307,8 +305,8 @@ class Follow implements Behavior{
 
 		int val = MazeSolver.ls.getLightValue();
 		float motorBSpeed = (float)((val
-				/100.0)*(MazeSolver.defaultSpeed+60)-60);
-		float motorASpeed = (MazeSolver.defaultSpeed - (float)((val/100.0)*(MazeSolver.defaultSpeed+60)-60));
+				/100.0)*(MazeSolver.defaultSpeed+80)-80);
+		float motorASpeed = (MazeSolver.defaultSpeed - (float)((val/100.0)*(MazeSolver.defaultSpeed+80)-80));
 		if(motorASpeed < 0) {
 			Motor.A.setSpeed(motorASpeed);
 			Motor.A.backward();
@@ -387,9 +385,9 @@ class Stop implements Behavior{
 
 class Cancer implements Runnable{
 	
-	int[] freak = {523,784,659};
+	int[] freak = {523,784,659, 900};
 	public Cancer() {
-		Sound.setVolume((int)(Sound.VOL_MAX * 0.1));
+		Sound.setVolume((int)(Sound.VOL_MAX * 0.25));
 	}
 	@Override
 	public void run() {
@@ -397,7 +395,7 @@ class Cancer implements Runnable{
 		while(true) {
 			Sound.playNote(Sound.XYLOPHONE, this.freak[count],300);
 			count++;
-			if(count >= 3) {
+			if(count >= 4) {
 				count = 0;
 			}
 		}
