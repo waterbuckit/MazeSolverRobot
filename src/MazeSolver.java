@@ -42,10 +42,11 @@ public class MazeSolver {
 	private static double rotateSpeed = 40; 
 	static NXTMotor motorA;
 	static NXTMotor motorB;
+	static boolean corrected;
 
 	public static void main(String args[]) {
-		Thread thread = new Thread(new Cancer());
-		thread.start();
+//		Thread thread = new Thread(new Cancer());
+//		thread.start();
 		motorA = new NXTMotor(MotorPort.A);
 		motorB = new NXTMotor(MotorPort.B);
 		pilot = new DifferentialPilot(56, 112, Motor.B, Motor.A);
@@ -83,6 +84,7 @@ public class MazeSolver {
 		Delay.msDelay(1000);
 		//sends a message to the robot so that it will stop allow duplicates
 		MazeSolver.connection.write("corrected".getBytes(), "corrected".getBytes().length);
+		MazeSolver.corrected = true;
 	}
 	private static void connectToPhone_desu() {
 		LCD.drawString("Waiting  ", 0, 0);
@@ -206,6 +208,7 @@ class LookForJunction implements Behavior{
 		MazeSolver.pilot.stop();
 		correct_desu();
 		MazeSolver.connection.write("corrected".getBytes(), "corrected".getBytes().length);
+		MazeSolver.corrected = true;
 
 
 		if(!MazeSolver.checkNodes_desu(MazeSolver.currentID)) {
@@ -262,7 +265,8 @@ class BluetoothHandler implements Behavior{
 
 	@Override
 	public boolean takeControl() {
-		return (MazeSolver.connection != null && MazeSolver.connection.available() > 0);
+		return (MazeSolver.connection != null && MazeSolver.connection.available() > 0 &&
+				MazeSolver.corrected);
 	}
 
 	@Override
@@ -276,10 +280,10 @@ class BluetoothHandler implements Behavior{
 		LCD.drawChar(']', read + 4, 3);
 		// we've read something so we need to say we've corrected
 		MazeSolver.connection.write("not".getBytes(), "not".getBytes().length);
-//		Delay.msDelay(50);
-		MazeSolver.connection.write(MazeSolver.buffer, read);
+		MazeSolver.corrected = false;
+//		Delay.msDelay(50);zz
 		MazeSolver.currentID = MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
-		// testing
+		MazeSolver.connection.write(MazeSolver.buffer, read);
 	}
 
 	@Override
@@ -387,7 +391,7 @@ class Cancer implements Runnable{
 	
 	int[] freak = {523,784,659, 900};
 	public Cancer() {
-		Sound.setVolume((int)(Sound.VOL_MAX * 0.25));
+		Sound.setVolume((int)(Sound.VOL_MAX * 0.15));
 	}
 	@Override
 	public void run() {
