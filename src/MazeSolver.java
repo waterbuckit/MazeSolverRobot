@@ -1,5 +1,3 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.util.LinkedList;
 
 import lejos.nxt.Button;
@@ -22,11 +20,8 @@ import lejos.util.Delay;
 public class MazeSolver {
 		
 	static BTConnection connection = null;
-	static DataInputStream dis;
-	static DataOutputStream dos;
 	static int MAX_READ = 3;
 	static byte[] buffer = new byte[MAX_READ];
-	static DataInputStream in;
 	static String start;
 	static String end;
 	static LinkedList<Node> nodes;
@@ -42,7 +37,6 @@ public class MazeSolver {
 	private static double rotateSpeed = 40; 
 	static NXTMotor motorA;
 	static NXTMotor motorB;
-	static boolean corrected;
 
 	public static void main(String args[]) {
 //		Thread thread = new Thread(new Cancer());
@@ -84,7 +78,7 @@ public class MazeSolver {
 		Delay.msDelay(1000);
 		//sends a message to the robot so that it will stop allow duplicates
 		MazeSolver.connection.write("corrected".getBytes(), "corrected".getBytes().length);
-		MazeSolver.corrected = true;
+
 	}
 	private static void connectToPhone_desu() {
 		LCD.drawString("Waiting  ", 0, 0);
@@ -208,8 +202,6 @@ class LookForJunction implements Behavior{
 		MazeSolver.pilot.stop();
 		correct_desu();
 		MazeSolver.connection.write("corrected".getBytes(), "corrected".getBytes().length);
-		MazeSolver.corrected = true;
-
 
 		if(!MazeSolver.checkNodes_desu(MazeSolver.currentID)) {
 			MazeSolver.nodes.add(new Node(MazeSolver.currentID));
@@ -265,8 +257,7 @@ class BluetoothHandler implements Behavior{
 
 	@Override
 	public boolean takeControl() {
-		return (MazeSolver.connection != null && MazeSolver.connection.available() > 0 &&
-				MazeSolver.corrected);
+		return (MazeSolver.connection != null && MazeSolver.connection.available() > 0);
 	}
 
 	@Override
@@ -279,11 +270,11 @@ class BluetoothHandler implements Behavior{
 		MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
 		LCD.drawChar(']', read + 4, 3);
 		// we've read something so we need to say we've corrected
-		MazeSolver.connection.write("not".getBytes(), "not".getBytes().length);
-		MazeSolver.corrected = false;
-//		Delay.msDelay(50);zz
+//		MazeSolver.connection.write("notc".getBytes(), "notc".getBytes().length);
+//		Delay.msDelay(50);
 		MazeSolver.currentID = MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
-		MazeSolver.connection.write(MazeSolver.buffer, read);
+//		MazeSolver.connection.write(MazeSolver.buffer, read);
+		
 	}
 
 	@Override
