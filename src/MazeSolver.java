@@ -58,19 +58,16 @@ public class MazeSolver {
 				Arbitrator arb = new Arbitrator(behaviorList);
 		arb.start();
 	}
+	
 	private static void setStartandEnd_desu() {
 		LCD.clear();
 		LCD.drawString("Start: ", 0, 0);
-		//start = connection.read(buffer, MAX_READ);
 		start = convertBytes_desu(connection.read(buffer, MAX_READ), buffer);
 		nodes.add(new Node(start));
 		Delay.msDelay(1000);
 		LCD.clear();
 		LCD.drawString("End: ", 0, 0);
-		//end = connection.read(buffer, MAX_READ);
 		end = convertBytes_desu(connection.read(buffer, MAX_READ), buffer);
-
-//		nodes.add(new Node(end));
 		Delay.msDelay(1000);
 		LCD.clear();
 		LCD.drawString(start, 0, 1);
@@ -124,8 +121,6 @@ class TurnLeft implements Behavior{
 
 	@Override
 	public void action() {
-		LCD.clear(0);
-		LCD.drawString((MazeSolver.look) ? "true" : "false", 0, 0);
 		Delay.msDelay(1000);
 		MazeSolver.pilot.rotate(90);
 		MazeSolver.look = true;
@@ -266,9 +261,9 @@ class BluetoothHandler implements Behavior{
 		LCD.drawInt(MazeSolver.connection.available(), 12, 2);
 		int read = MazeSolver.connection.read(MazeSolver.buffer, MazeSolver.MAX_READ);
 		LCD.drawChar('[', 3, 3);
-		// draw the read bytes to the screen as bytes.
-		MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
-		LCD.drawChar(']', read + 4, 3);
+//		// draw the read bytes to the screen as bytes.
+//		MazeSolver.convertBytes_desu(read, MazeSolver.buffer);
+//		LCD.drawChar(']', read + 4, 3);
 		// we've read something so we need to say we've corrected
 //		MazeSolver.connection.write("notc".getBytes(), "notc".getBytes().length);
 //		Delay.msDelay(50);
