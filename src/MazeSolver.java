@@ -55,7 +55,7 @@ public class MazeSolver {
 		Behavior[] behaviorList = {new Follow(),new LookForJunction(),
 				new TurnRight(), new TurnLeft(),new LookForLine(),
 				new BluetoothHandler(), new Stop()};
-				Arbitrator arb = new Arbitrator(behaviorList);
+		Arbitrator arb = new Arbitrator(behaviorList);
 		arb.start();
 	}
 	
